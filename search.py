@@ -46,7 +46,7 @@ def bfs(maze):
 	for position in currentLevel:
 		explored.append(position)
 	#time.sleep(0.5)
-	while (finalPosition not in currentLevel):
+	while (finalPosition not in currentLevel):#loop until the goal is in currentlevel of seach
 		steps=steps+len(currentLevel)
 		#time.sleep(1)
 		nextLevel=[] #clear nextlevel data
@@ -60,7 +60,7 @@ def bfs(maze):
 		currentLevel=nextLevel #update currentlevel
 		#print(currentLevel)
 	currentPosition=finalPosition
-	print(dict_parent,finalPosition)
+	#print(dict_parent,finalPosition)
 	while currentPosition != startPoint:
 		path.insert(0,currentPosition)
 		currentPosition=dict_parent[currentPosition]
@@ -74,39 +74,82 @@ def dfs(maze):
 	steps=0
 	path=[currentPosition]
 	dict_frontier={} #store the positions that is not chosed
-	while (currentPosition != finalPosition):
-
-		#time.sleep(0.1)
-		#print('position',currentPosition)
+	while (currentPosition != finalPosition): #loop until reach the goal
 		steps=steps+1
 		currentNeighbors = maze.getNeighbors(currentPosition[0], currentPosition[1])
-		#print('neighbors',currentNeighbors)
 		if currentPosition not in dict_frontier: #if not recorded in dict., record it
 			neighbors=[]
 			for neighbor in currentNeighbors:
 				if neighbor != currentPosition and neighbor not in dict_frontier: #not the way it comes from and not the way that have been explored
 					neighbors.append(neighbor)
-			#print(neighbors)
 			dict_frontier[currentPosition]=neighbors
-				#currentPosition=dict_frontier[currentPosition][0] #update the current position, chosen from the list of frontiers current position has
-
 		currentNeighbors = dict_frontier[currentPosition]
-		#print('poped',currentNeighbors)
 		if len(currentNeighbors) ==0: #if no more direction available, then wrong path, pop path items to retrieve, and update currentPosition
 			currentPosition=path.pop(-1)
 			if len(dict_frontier[currentPosition]) !=0:
 				path.append(currentPosition)
 		else: #if have direction available, go to the direction and pop it from the frontier dict.
 			lastPosition=currentPosition
-			#print(currentPosition,currentNeighbors)
 			currentPosition=currentNeighbors.pop(-1)
 			dict_frontier[lastPosition]=currentNeighbors
 			path.append(currentPosition) #add position to the path
-		#print('p',path)
 		if steps>2000:
-			#print(dict_frontier)
 			return path, steps
 	return path, steps
+
+# def dfsadv(maze): #advanced with better performance in open space with almost the same cost
+	# currentPosition = maze.getStart()
+	# finalPosition = maze.getObjectives()[-1]	
+	# steps=0
+	# path=[currentPosition]
+	# dict_frontier={} #store the positions that is not chosed
+	# mem=[]
+	# deletedpath=[]
+	# while (currentPosition != finalPosition):
+
+		# #time.sleep(0.1)
+		# #print('position',currentPosition)
+		# steps=steps+1
+		# currentNeighbors = maze.getNeighbors(currentPosition[0], currentPosition[1])
+		# temppath=path
+
+		# #print('neighbors',currentNeighbors)
+		# if currentPosition not in dict_frontier: #if not recorded in dict., record it
+			# neighbors=[]
+			# for neighbor in currentNeighbors:
+				# if len(path)>=4:
+					# if neighbor == path[-4]:
+						# deletedpath.append(path.pop(-2))
+						# path.pop(-2)
+				# if neighbor != currentPosition and neighbor not in dict_frontier: #not the way it comes from and not the way that have been explored
+					# neighbors.append(neighbor)
+
+			# dict_frontier[currentPosition]=neighbors
+
+		# currentNeighbors = dict_frontier[currentPosition]
+		# #print('poped',currentNeighbors)
+		# if len(currentNeighbors) ==0: #if no more direction available, then wrong path, pop path items to retrieve, and update currentPosition
+			# if len(path)>=1:
+				# currentPosition=path.pop(-1)
+				# deletedpath.append(currentPosition)
+			# else:#retrive through deleted path until new direction available
+				# while len(dict_frontier[currentPosition])==0:
+					# currentPosition=deletedpath.pop(-1)
+					# path.append(currentPosition)
+					# steps=steps+1
+			# if len(dict_frontier[currentPosition]) !=0:
+				# path.append(currentPosition)
+		# else: #if have direction available, go to the direction and pop it from the frontier dict.
+			# lastPosition=currentPosition
+			# #print(currentPosition,currentNeighbors)
+			# currentPosition=currentNeighbors.pop(-1)
+			# dict_frontier[lastPosition]=currentNeighbors
+			# path.append(currentPosition) #add position to the path
+		# print('p',path)
+		# if steps>400:
+			# #print(dict_frontier)
+			# return path, steps
+	# return path, steps
 
 
 def greedy(maze):
