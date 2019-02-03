@@ -42,7 +42,6 @@ def bfs(maze):
 	
 	ex_positions=[startPoint]
 	ex_positions.extend(goals)
-	path=[startPoint]
 	steps=0
 	dict_cn={}
 	dict_cn_len={}
@@ -103,15 +102,22 @@ def bfs(maze):
 					dict_cn_temp.pop(exroute)
 					dict_cn_len_temp.pop(exroute)
 					#print('poped')
-			#print(exroute,order,currentPosition)
+			#print(order,currentPosition,nextPosition)
+			if (currentPosition,nextPosition) in dict_cn_len:
+				route=(currentPosition,nextPosition)
+			else:
+				route=(nextPosition,currentPosition)
 			hn=sum(sorted(dict_cn_len_temp.values())[0:len(left)])
-			dn_temp=len(dict_cn[(currentPosition,nextPosition)])+dn
+			dn_temp=dict_cn_len[route]+dn
 			fn=hn+dn_temp
-			#print('f:',fn,fnmin)
+			#print('f:',fn,fnmin,dn,(hn,dn_temp))
 			if fn<=fnmin:
 				fnmin=fn
-				dn=dn_temp
 				next=nextPosition
+		if (currentPosition,next) in dict_cn_len:
+			dn=dict_cn_len[(currentPosition,next)]+dn
+		else:
+			dn=dict_cn_len[(next,currentPosition)]+dn
 		order.append(next)
 		currentPosition=next
 		left.remove(currentPosition)
@@ -119,7 +125,9 @@ def bfs(maze):
 		if (order[i],order[i+1]) in dict_cn:
 			finalpath.extend(dict_cn[order[i],order[i+1]])
 		else:
-			finalpath.extend(dict_cn[order[i+1],order[i]],reverse=true)
+			finalpath.pop(-1)
+			finalpath.extend(reversed(dict_cn[order[i+1],order[i]]))
+			finalpath.append(order[i+1])
 	#print(finalpath)
 	return finalpath, steps
 
@@ -224,65 +232,111 @@ def greedy(maze):
 def astar(maze):
     # TODO: Write your code here
 	startPoint = maze.getStart()
-	currentPosition=startPoint
+	currentLevel=[startPoint]
 	goals=maze.getObjectives()
-	path=[currentPosition]
+	ex_positions=[startPoint]
+	ex_positions.extend(goals)
 	steps=0
-	finalpath=[]
-	while len(goals) !=0:
-		finalPosition = goals.pop()
-		frontierSet={}
-		frontierSet[currentPosition]=finalPosition[0]-currentPosition[0]+finalPosition[1]-currentPosition[1]
-		path=[]
-		dict_parent={}
-		explored=[currentPosition]
-		dict_pathlength={}
-		dict_pathlength[currentPosition]=0
-		while (currentPosition!=finalPosition):
-			#print(frontierSet)
-			neighbors=[]
-			neighborstemp=maze.getNeighbors(currentPosition[0], currentPosition[1])
-			for neighbor in neighborstemp:
-				if neighbor in frontierSet:
-					pathlength=dict_pathlength[currentPosition]+1
-					if frontierSet[neighbor]>finalPosition[0]-neighbor[0]+finalPosition[1]-neighbor[1]+pathlength:
+	dict_cn={}
+	dict_cn_len={}
+	finalpath=[startPoint]
+	for i in range(len(ex_positions)-1):
+		for j in range(i+1,len(ex_positions)):
+			start_final=(ex_positions[i],ex_positions[j])
+			currentPosition = ex_positions[i]
+			finalPosition = ex_positions[j]
+			frontierSet={}
+			frontierSet[currentPosition]=abs(finalPosition[0]-currentPosition[0])+abs(finalPosition[1]-currentPosition[1])
+			path=[]
+			dict_parent={}
+			explored=[currentPosition]
+			dict_pathlength={}
+			dict_pathlength[currentPosition]=0
+			while (currentPosition!=finalPosition):
+				neighbors=[]
+				neighborstemp=maze.getNeighbors(currentPosition[0], currentPosition[1])
+				for neighbor in neighborstemp:
+					if neighbor in frontierSet:
+						pathlength=dict_pathlength[currentPosition]+1
+						if frontierSet[neighbor]>abs(finalPosition[0]-neighbor[0])+abs(finalPosition[1]-neighbor[1])+pathlength:
+							frontierSet[neighbor]=abs(finalPosition[0]-neighbor[0])+abs(finalPosition[1]-neighbor[1])+pathlength
+							dict_parent[neighbor]=currentPosition
+							dict_pathlength[neighbor]=pathlength
+					if neighbor not in explored:
+						neighbors.append(neighbor)
+						explored.append(neighbor)
+						#print('neighbor',neighbor)
+						
+				if len(neighbors)!=0:
+					for neighbor in neighbors:
+						pathlength=dict_pathlength[currentPosition]+1
 						frontierSet[neighbor]=finalPosition[0]-neighbor[0]+finalPosition[1]-neighbor[1]+pathlength
 						dict_parent[neighbor]=currentPosition
 						dict_pathlength[neighbor]=pathlength
-				if neighbor not in explored:
-					neighbors.append(neighbor)
-					explored.append(neighbor)
-					#print('neighbor',neighbor)
-					
-			if len(neighbors)!=0:
-				for neighbor in neighbors:
-					pathlength=dict_pathlength[currentPosition]+1
-					frontierSet[neighbor]=finalPosition[0]-neighbor[0]+finalPosition[1]-neighbor[1]+pathlength
-					dict_parent[neighbor]=currentPosition
-					dict_pathlength[neighbor]=pathlength
-				frontierSet.pop(currentPosition)
-				s=[(k,frontierSet[k]) for k in sorted(frontierSet,key=frontierSet.get)]
-				currentPosition=s[0][0]
-				#print('current',currentPosition)
+					frontierSet.pop(currentPosition)
+					s=[(k,frontierSet[k]) for k in sorted(frontierSet,key=frontierSet.get)]
+					currentPosition=s[0][0]
+					#print('current',currentPosition)
 
-				#time.sleep(1)
+					#time.sleep(1)
+				else:
+					frontierSet.pop(currentPosition)
+					s=[(k,frontierSet[k]) for k in sorted(frontierSet,key=frontierSet.get)]
+					currentPosition=s[0][0]
+					#print('current',currentPosition)
+				steps=steps+1
+			while currentPosition != ex_positions[i]:
+				path.insert(0,currentPosition)
+				currentPosition=dict_parent[currentPosition]
+				#print('insert', currentPosition)
+			dict_cn[start_final]=path
+			dict_cn_len[start_final]=len(path)
+			#print(explored)
+			# return path, num_states_explored
+	order=[startPoint]
+	currentPosition=startPoint
+	dict_ex_p_left={}
+	left=goals
+	dict_frontier={}
+	dn=0
+	#print(dict_cn_len)
+	while len(left)!=0:
+		#print(left)
+		fnmin=sum(sorted(dict_cn_len.values())[-len(left):])+dn
+		next=order[-1]
+		for nextPosition in left:#find smallest hn+dn
+			dict_cn_temp=dict_cn.copy()
+			dict_cn_len_temp=dict_cn_len.copy()
+			for exroute in dict_cn:
+				if exroute[0] in order or exroute[1] in order or exroute[0] == currentPosition or exroute[1] == currentPosition:
+					dict_cn_temp.pop(exroute)
+					dict_cn_len_temp.pop(exroute)
+					#print('poped')
+			#print(order,currentPosition,nextPosition)
+			if (currentPosition,nextPosition) in dict_cn_len:
+				route=(currentPosition,nextPosition)
 			else:
-				frontierSet.pop(currentPosition)
-				s=[(k,frontierSet[k]) for k in sorted(frontierSet,key=frontierSet.get)]
-				currentPosition=s[0][0]
-				#print('current',currentPosition)
-			steps=steps+1
-			if steps>20000:
-				print(s)
-				break
-		while currentPosition != startPoint:
-			path.insert(0,currentPosition)
-			currentPosition=dict_parent[currentPosition]
-			#print('insert', currentPosition)
-		finalpath.extend(path)
-		currentLevel=[finalPosition]
-		startPoint=finalPosition
-	finalpath.insert(0,maze.getStart())
-	#print(explored)
-    # return path, num_states_explored
+				route=(nextPosition,currentPosition)
+			hn=sum(sorted(dict_cn_len_temp.values())[0:len(left)])
+			dn_temp=dict_cn_len[route]+dn
+			fn=hn+dn_temp
+			#print('f:',fn,fnmin,dn,(hn,dn_temp))
+			if fn<=fnmin:
+				fnmin=fn
+				next=nextPosition
+		if (currentPosition,next) in dict_cn_len:
+			dn=dict_cn_len[(currentPosition,next)]+dn
+		else:
+			dn=dict_cn_len[(next,currentPosition)]+dn
+		order.append(next)
+		currentPosition=next
+		left.remove(currentPosition)
+	for i in range(len(order)-1):
+		if (order[i],order[i+1]) in dict_cn:
+			finalpath.extend(dict_cn[order[i],order[i+1]])
+		else:
+			finalpath.pop(-1)
+			finalpath.extend(reversed(dict_cn[order[i+1],order[i]]))
+			finalpath.append(order[i+1])
+	#print(finalpath)
 	return finalpath, steps
