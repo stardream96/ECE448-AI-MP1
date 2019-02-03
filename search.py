@@ -173,5 +173,59 @@ def greedy(maze):
 
 def astar(maze):
     # TODO: Write your code here
+	startPoint = maze.getStart()
+	currentPosition=startPoint
+	goals=maze.getObjectives()
+	path=[currentPosition]
+	steps=0
+	finalpath=[]
+	while len(goals) !=0:
+		finalPosition = goals.pop()
+		frontierSet={}
+		frontierSet[currentPosition]=finalPosition[0]-currentPosition[0]+finalPosition[1]-currentPosition[1]
+		path=[]
+		dict_parent={}
+		explored=[currentPosition]
+		dict_pathlength={}
+		dict_pathlength[currentPosition]=0
+		while (currentPosition!=finalPosition):
+			print(frontierSet)
+			neighbors=[]
+			neighborstemp=maze.getNeighbors(currentPosition[0], currentPosition[1])
+			for neighbor in neighborstemp:
+				if neighbor not in explored:
+					neighbors.append(neighbor)
+					explored.append(neighbor)
+					#print('neighbor',neighbor)
+					
+			if len(neighbors)!=0:
+				for neighbor in neighbors:
+					pathlength=dict_pathlength[currentPosition]+1
+					frontierSet[neighbor]=finalPosition[0]-neighbor[0]+finalPosition[1]-neighbor[1]+pathlength
+					dict_parent[neighbor]=currentPosition
+					dict_pathlength[neighbor]=pathlength
+				frontierSet.pop(currentPosition)
+				s=[(k,frontierSet[k]) for k in sorted(frontierSet,key=frontierSet.get)]
+				currentPosition=s[0][0]
+				#print('current',currentPosition)
+
+				#time.sleep(1)
+			else:
+				frontierSet.pop(currentPosition)
+				s=[(k,frontierSet[k]) for k in sorted(frontierSet,key=frontierSet.get)]
+				currentPosition=s[0][0]
+				#print('current',currentPosition)
+			steps=steps+1
+			if steps>2000:
+				break
+		while currentPosition != startPoint:
+			path.insert(0,currentPosition)
+			currentPosition=dict_parent[currentPosition]
+			#print('insert', currentPosition)
+		finalpath.extend(path)
+		currentLevel=[finalPosition]
+		startPoint=finalPosition
+	finalpath.insert(0,maze.getStart())
+	print(frontierSet)
     # return path, num_states_explored
-    return [], 0
+	return finalpath, steps
