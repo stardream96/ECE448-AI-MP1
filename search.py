@@ -240,8 +240,11 @@ def astar(maze):
 	dict_cn={}
 	dict_cn_len={}
 	finalpath=[startPoint]
+	removelist=[]
+	x=((len(ex_positions)-1)*(len(ex_positions)))/2
 	for i in range(len(ex_positions)-1):
 		for j in range(i+1,len(ex_positions)):
+			x=x-1
 			start_final=(ex_positions[i],ex_positions[j])
 			currentPosition = ex_positions[i]
 			finalPosition = ex_positions[j]
@@ -276,9 +279,7 @@ def astar(maze):
 					frontierSet.pop(currentPosition)
 					s=[(k,frontierSet[k]) for k in sorted(frontierSet,key=frontierSet.get)]
 					currentPosition=s[0][0]
-					#print('current',currentPosition)
 
-					#time.sleep(1)
 				else:
 					frontierSet.pop(currentPosition)
 					s=[(k,frontierSet[k]) for k in sorted(frontierSet,key=frontierSet.get)]
@@ -289,26 +290,31 @@ def astar(maze):
 				path.insert(0,currentPosition)
 				currentPosition=dict_parent[currentPosition]
 				#print('insert', currentPosition)
+			if x%1000==0:
+				print('step(1/2),left:',x)
 			dict_cn[start_final]=path
 			dict_cn_len[start_final]=len(path)
-			#print(explored)
-			# return path, num_states_explored
+	print('step 1 finished')
+	left=goals
 	order=[startPoint]
 	currentPosition=startPoint
 	dict_ex_p_left={}
 	left=goals
 	dict_frontier={}
 	dn=0
+	hnold=0
 	#print(dict_cn_len)
 	while len(left)!=0:
 		#print(left)
 		fnmin=sum(sorted(dict_cn_len.values())[-len(left):])+dn
 		next=order[-1]
+		routelist={}
+		passedlist={}
 		for nextPosition in left:#find smallest hn+dn
 			dict_cn_temp=dict_cn.copy()
 			dict_cn_len_temp=dict_cn_len.copy()
 			for exroute in dict_cn:
-				if exroute[0] in order or exroute[1] in order or exroute[0] == currentPosition or exroute[1] == currentPosition:
+				if (exroute[0] not in left and exroute[1] not in left) or exroute[0] == currentPosition or exroute[1] == currentPosition:
 					dict_cn_temp.pop(exroute)
 					dict_cn_len_temp.pop(exroute)
 					#print('poped')
@@ -317,18 +323,50 @@ def astar(maze):
 				route=(currentPosition,nextPosition)
 			else:
 				route=(nextPosition,currentPosition)
-			hn=sum(sorted(dict_cn_len_temp.values())[0:len(left)])
+			passed=[]
+			for position in left:
+				if position in dict_cn[(route)]:
+					passed.append(position)
+			dict_cn_temp2=dict_cn_temp.copy()
+			dict_cn_len_temp2=dict_cn_len_temp.copy()
+			for exroute in dict_cn_temp:
+				if exroute[0] in passed or exroute[1] in passed:
+					dict_cn_temp2.pop(exroute)
+					dict_cn_len_temp2.pop(exroute)
+
+			steps=steps+1
+			passedlist[route]=passed
+			hn=sum(sorted(dict_cn_len_temp2.values())[0:len(left)-len(passed)])
 			dn_temp=dict_cn_len[route]+dn
 			fn=hn+dn_temp
 			#print('f:',fn,fnmin,dn,(hn,dn_temp))
-			if fn<=fnmin:
-				fnmin=fn
-				next=nextPosition
+			routelist[route]=fn
+			
+		s=routelist[min(routelist,key=routelist.get)]
+		sorted_routelist=[(k,routelist[k]) for k in sorted(routelist,key=routelist.get)]
+
+		maxroute=sorted_routelist[0][0]
+		#print (s,sorted_routelist,maxroute)
+		for prot_route in routelist:
+			if routelist[prot_route]==s:
+				#print('here',routelist[prot_route])
+				if dict_cn_len[prot_route]>dict_cn_len[maxroute]:
+					maxroute=prot_route
+		if currentPosition == maxroute[1]:
+			next=maxroute[0]
+		else:
+			next=maxroute[1]
+		#print(maxroute)
+		for position in left:
+			if position in dict_cn[maxroute] and position != next:
+				left.remove(position)
+		hnold=hn
 		if (currentPosition,next) in dict_cn_len:
 			dn=dict_cn_len[(currentPosition,next)]+dn
 		else:
 			dn=dict_cn_len[(next,currentPosition)]+dn
 		order.append(next)
+		print('step(2/2),left:',len(left))
 		currentPosition=next
 		left.remove(currentPosition)
 	for i in range(len(order)-1):
@@ -338,5 +376,5 @@ def astar(maze):
 			finalpath.pop(-1)
 			finalpath.extend(reversed(dict_cn[order[i+1],order[i]]))
 			finalpath.append(order[i+1])
-	#print(finalpath)
+	print(order)
 	return finalpath, steps
