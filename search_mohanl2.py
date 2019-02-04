@@ -32,7 +32,7 @@ def search(maze, searchMethod):
         "astar": astar,
     }.get(searchMethod)(maze)
 
-
+#uses deque for stack & queue in dfs/bfs
 def bfs(maze):
     # TODO: Write your code here
     # return path, num_states_explored
@@ -94,7 +94,7 @@ def dfs(maze):
 
     return path, num_states_explored
 
-
+#priority queue needs "import heapq"
 def greedy(maze):
     # TODO: Write your code here
     # return path, num_states_explored
@@ -127,7 +127,7 @@ def greedy(maze):
 
     return path, num_states_explored
 
-
+#uses heapq
 def astar(maze):       #handles both single and multi dots (suboptimal)
     # TODO: Write your code here
     # return path, num_states_explored
@@ -180,7 +180,7 @@ def astar(maze):       #handles both single and multi dots (suboptimal)
     return path, num_states_explored
 
 
-
+#below is a copy of the single destination version written before
 '''
 num_states_explored = 0
     heap = []
